@@ -1,5 +1,6 @@
 package org.pfa.ticket.service;
 
+import lombok.RequiredArgsConstructor;
 import org.pfa.ticket.dto.TicketDto;
 import org.pfa.ticket.model.Ticket;
 import org.pfa.ticket.repository.TicketRepository;
@@ -10,20 +11,20 @@ import org.pfa.ticket.utils.QrCodeGenerator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@Service @RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
 
-    @Autowired
-    private TicketRepository ticketRepository;
+
+    private final TicketRepository ticketRepository;
 
     @Override
     public TicketDto createTicket(TicketDto ticketDto) {
         try {
             Ticket ticket = new Ticket();
-            ticket.setEventId(ticketDto.getEventId());
-            ticket.setUserId(ticketDto.getUserId());
-            ticket.setBookingTime(ticketDto.getBookingTime());
-            ticket.setValidated(ticketDto.isValidated());
+            ticket.setEventId(ticketDto.eventId());
+            ticket.setUserId(ticketDto.userId());
+            ticket.setBookingTime(ticketDto.bookingTime());
+            ticket.setValidated(ticketDto.validated());
 
             Ticket savedTicket = ticketRepository.save(ticket);
 

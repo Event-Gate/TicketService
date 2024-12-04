@@ -1,6 +1,7 @@
 package org.pfa.ticket.controller;
 
 
+import lombok.RequiredArgsConstructor;
 import org.pfa.ticket.dto.TicketDto;
 import org.pfa.ticket.service.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,10 +11,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets")
+@RequiredArgsConstructor
 public class TicketController {
 
-    @Autowired
-    private TicketService ticketService;
+
+    private final TicketService ticketService;
 
     @PostMapping
     public TicketDto createTicket(@RequestBody TicketDto ticketDto) {
