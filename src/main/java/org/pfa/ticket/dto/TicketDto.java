@@ -16,4 +16,9 @@ public record TicketDto(
         boolean validated,
         String qrCode
 ) {
+    public TicketDto {
+        if (eventId == null || eventId.isBlank()) {
+            throw new IllegalArgumentException("Event ID cannot be null or empty");
+        }
+    }
 }
