@@ -4,18 +4,19 @@ import lombok.RequiredArgsConstructor;
 import org.pfa.ticket.dto.TicketDto;
 import org.pfa.ticket.model.Ticket;
 import org.pfa.ticket.repository.TicketRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.pfa.ticket.utils.QrCodeGenerator;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
 
-
     private final TicketRepository ticketRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     public TicketDto createTicket(TicketDto ticketDto) {
@@ -28,17 +29,20 @@ public class TicketServiceImpl implements TicketService {
 
             Ticket savedTicket = ticketRepository.save(ticket);
 
+            // Generate QR code for the ticket
             String qrCode = QrCodeGenerator.generateQrCode(savedTicket.getId().toString());
             savedTicket.setQrCode(qrCode);
             ticketRepository.save(savedTicket);
 
+            // Produce Kafka event
+            String eventMessage = String.format("Ticket Created: ID=%d, EventID=%d, UserID=%d",
+                    savedTicket.getId(), savedTicket.getEventId(), savedTicket.getUserId());
+            kafkaTemplate.send("ticket-events", eventMessage);
+
             return convertToDto(savedTicket);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Error while creating ticket: " + e.getMessage());
         }
-
-
     }
 
     @Override
@@ -55,17 +59,6 @@ public class TicketServiceImpl implements TicketService {
         return convertToDto(ticket);
     }
 
-
-    private TicketDto convertToDto(Ticket ticket) {
-        return new TicketDto(
-                ticket.getId(),
-                ticket.getEventId(),
-                ticket.getUserId(),
-                ticket.getBookingTime(),
-                ticket.isValidated(),
-                ticket.getQrCode()
-        );
-    }
     @Override
     public TicketDto validateTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -77,6 +70,23 @@ public class TicketServiceImpl implements TicketService {
 
         ticket.setValidated(true);
         Ticket updatedTicket = ticketRepository.save(ticket);
+
+        // Produce Kafka event
+        String eventMessage = String.format("Ticket Validated: ID=%d, EventID=%d, UserID=%d",
+                updatedTicket.getId(), updatedTicket.getEventId(), updatedTicket.getUserId());
+        kafkaTemplate.send("ticket-events", eventMessage);
+
         return convertToDto(updatedTicket);
+    }
+
+    private TicketDto convertToDto(Ticket ticket) {
+        return new TicketDto(
+                ticket.getId(),
+                ticket.getEventId(),
+                ticket.getUserId(),
+                ticket.getBookingTime(),
+                ticket.isValidated(),
+                ticket.getQrCode()
+        );
     }
 }
