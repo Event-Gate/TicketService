@@ -28,15 +28,21 @@ public class TicketServiceImpl implements TicketService {
             ticket.setValidated(ticketDto.validated());
 
             Ticket savedTicket = ticketRepository.save(ticket);
-
+            System.out.println(savedTicket);
             // Generate QR code for the ticket
             String qrCode = QrCodeGenerator.generateQrCode(savedTicket.getId().toString());
+
             savedTicket.setQrCode(qrCode);
             ticketRepository.save(savedTicket);
 
+
+
+
             // Produce Kafka event
-            String eventMessage = String.format("Ticket Created: ID=%d, EventID=%d, UserID=%d",
+            String eventMessage = String.format("Ticket Created: ID=%d, EventID=%s, UserID=%s",
                     savedTicket.getId(), savedTicket.getEventId(), savedTicket.getUserId());
+
+
             kafkaTemplate.send("ticket-events", eventMessage);
 
             return convertToDto(savedTicket);
@@ -72,7 +78,7 @@ public class TicketServiceImpl implements TicketService {
         Ticket updatedTicket = ticketRepository.save(ticket);
 
         // Produce Kafka event
-        String eventMessage = String.format("Ticket Validated: ID=%d, EventID=%d, UserID=%d",
+        String eventMessage = String.format("Ticket Validated: ID=%d, EventID=%s, UserID=%s",
                 updatedTicket.getId(), updatedTicket.getEventId(), updatedTicket.getUserId());
         kafkaTemplate.send("ticket-events", eventMessage);
 
