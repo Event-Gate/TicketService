@@ -1,0 +1,42 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ticket-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/ticket_db
+      auto-index-creation: true
+  cloud:
+    consul:
+      discovery:
+        healthCheckPath: /actuator/health
+        healthCheckInterval: 10s
+        instance-id: ${spring.application.name}:${random.value}
+        service-name: ticket-service
+      host: localhost
+      port: 8500
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: FULL
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    topic:
+      ticket-name: tickets-topic
+      capacity-name: capacities-topic
+
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    com.pfa.eventservice: DEBUG
+    org.springframework.security.oauth2: TRACE
